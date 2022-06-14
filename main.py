@@ -5,12 +5,34 @@
 from abc import ABC, abstractmethod
 
 
-class Storage(ABC):
+class AbstractStorage(ABC):
+
+    @abstractmethod
+    def add(self, name, amount):
+        pass
+
+    @abstractmethod
+    def remove(self, name, amount):
+        pass
+
+    @abstractmethod
+    def get_free_space(self):
+        pass
+
+    @abstractmethod
+    def get_items(self):
+        pass
+
+    @abstractmethod
+    def get_unique_items_count(self):
+        pass
+
+
+class Storage(AbstractStorage):
     def __init__(self, items, capacity):
         self.items = items
         self.capacity = capacity
 
-    @abstractmethod
     def add(self, name, amount):
         for item in self.items:
             if name == item["name"]:
@@ -18,25 +40,21 @@ class Storage(ABC):
                 return ''
         self.items.append({"name": name, "amount": amount})
 
-    @abstractmethod
     def remove(self, name, amount):
         for item in self.items:
             if name == item["name"]:
                 item["amount"] -= amount
         return False
 
-    @abstractmethod
     def get_free_space(self):
         return self.capacity - self._amount_of_items()
 
-    @abstractmethod
     def get_items(self):
         _dict = {}
         for item in self.items:
             _dict[item["name"]] = item["amount"]
         return _dict
 
-    @abstractmethod
     def get_unique_items_count(self):
         unique_count = 0
         for item in self.items:
