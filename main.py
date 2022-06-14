@@ -2,13 +2,15 @@
     но это построение задания заставило меня еще больше времемни потратить,
     проще было бы если бы нормально основную цель разложили, а не объясняли, что должен делать и хранить каждый отдельный
     метод, поле и тд, тильт"""
+from abc import ABC, abstractmethod
 
-class Storage:
 
-    def __init__(self, capacity):
-        self.items = []
+class Storage(ABC):
+    def __init__(self, items, capacity):
+        self.items = items
         self.capacity = capacity
 
+    @abstractmethod
     def add(self, name, amount):
         for item in self.items:
             if name == item["name"]:
@@ -16,21 +18,25 @@ class Storage:
                 return ''
         self.items.append({"name": name, "amount": amount})
 
+    @abstractmethod
     def remove(self, name, amount):
         for item in self.items:
             if name == item["name"]:
                 item["amount"] -= amount
         return False
 
+    @abstractmethod
     def get_free_space(self):
         return self.capacity - self._amount_of_items()
 
+    @abstractmethod
     def get_items(self):
         _dict = {}
         for item in self.items:
             _dict[item["name"]] = item["amount"]
         return _dict
 
+    @abstractmethod
     def get_unique_items_count(self):
         unique_count = 0
         for item in self.items:
@@ -45,7 +51,7 @@ class Storage:
         return amount
 
 
-class Store:
+class Store(Storage):
     """
     items: [{'name': 'собака', 'amount': 2},{{'name': 'лед', 'amount': 3}},{}...]
     Есть ненужные функции, но я просто шел по шагам и в последнем шаге все переделывал, потому что в начале не особо понимал,
@@ -127,7 +133,7 @@ class Store:
         return amount
 
 
-class Shop:
+class Shop(Storage):
     def __init__(self, items, capacity=20):
         self.capacity = capacity
         self.items = items
@@ -147,7 +153,7 @@ class Shop:
             if name == item["name"]:
                 item["amount"] += amount
                 return True, reply_text
-        if self._is_free_place_items():
+        if self._is_free_place_items(): # Проверка, чтобы не было больше 5 различных товаров
             self.items.append({"name": name, "amount": amount})
             reply_text += f"У нас не было такого товара на {self}, но теперь он есть! Ура! Ура! Ура!\n"
             return True, reply_text
@@ -192,6 +198,7 @@ class Shop:
         return self._is_free_place_items(), self._is_free_place_capacity(value)
 
     def _is_free_place_items(self):
+        """Проверка, чтобы не было больше 5 различных товаров"""
         return len(self.items) < 5
 
     def _is_free_place_capacity(self, value):
@@ -209,23 +216,25 @@ class Shop:
 
 
 class Request:
-    def __init__(self, store_obj, shop_obj, deliver_str):
-        _list = deliver_str.split()
+    def __init__(self, store_obj, shop_obj, deliver_str, from_=None, to=None):
+        query_list = deliver_str.split()
+        if from_ is None and to is None:
+            self.from_, self.to = self.real_names(query_list[4], query_list[-1],
+                                                  {"склад": store_obj, "магазин": shop_obj}
+                                                  )
+        self.amount = int(query_list[1])
+        self.product = query_list[2]
 
-        self.from_, self.to = self.real_names(_list[4], _list[-1], {"склад": store_obj, "магазин": shop_obj})
-        self.amount = int(_list[1])
-        self.product = _list[2]
-        # TODO добавить __repr__ классам
 
     def real_names(self, from_, to, obj_dict):
-        new_from = None
-        new_to = None
+        """Нужна, если при инициализации экземпляра не передаются from_, to,
+                 тогда приходится узнавать из передаваемой строки"""
         for k, v in obj_dict.items():
             if k == from_:
-                new_from = v
+                from_ = v
             if k == to:
-                new_to = v
-        return new_from, new_to
+                to = v
+        return from_, to
 
     def process(self):
         remove = self.from_.remove(self.product, self.amount)
